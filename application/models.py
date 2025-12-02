@@ -23,43 +23,48 @@ db = SQLAlchemy(model_class = Base)
 
 
 
-loan_book = db.Table(
-    'loan_book',
+customer_ticket = db.Table(
+    'customer_ticket',
     Base.metadata,
-    db.Column('loan_id', db.ForeignKey('loans.id')),
-    db.Column('book_id', db.ForeignKey('books.id'))
+    db.Column('customer_id', db.ForeignKey('customers.id')),
+    db.Column('service_ticket_id', db.ForeignKey('service_tickets.id'))
 )
 
-class Member(Base):
-    __tablename__ = 'members'
+class Mechanic(Base):
+    __tablename__ = 'mechanics'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
     DOB: Mapped[date] = mapped_column(Date, nullable=False)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone_number: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    loans: Mapped[List['Loan']] = db.relationship(back_populates='member') #New relationship attribute
-
-
-class Loan(Base):
-    __tablename__ = 'loans'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    loan_date: Mapped[date] = mapped_column(Date, nullable=False)
-    member_id: Mapped[int] = mapped_column(ForeignKey('members.id'), nullable=False)
+    service_tickets: Mapped[List['ServiceTicket']] = db.relationship(back_populates='mechanic') #New relationship attribute
 
 
-    member: Mapped['Member'] = db.relationship(back_populates='loans') #New relationship attribute
-    books: Mapped[List['Book']] = db.relationship(secondary=loan_book, back_populates='loans')
-
-class Book(Base):
-    __tablename__ = "books"
+class ServiceTicket(Base):
+    __tablename__ = 'service_tickets'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    author: Mapped[str] = mapped_column(String(255), nullable=False)
-    genre: Mapped[str] = mapped_column(String(255), nullable=False)
+    service_ticket_date: Mapped[date] = mapped_column(Date, nullable=False)
+    customer : Mapped[str] = mapped_column(String(255), nullable=False)
+    vehicle: Mapped[str] = mapped_column(String(255), nullable=False)
+    task_description: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(100), nullable=False)
+    mechanic_id: Mapped[int | None] = mapped_column(ForeignKey('mechanics.id'), nullable=True)
+
+
+    mechanic: Mapped['Mechanic'] = db.relationship(back_populates='service_tickets') #New relationship attribute
+    customers: Mapped[List['Customer']] = db.relationship(secondary=customer_ticket, back_populates='service_tickets')
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
+    phone_number: Mapped[str] = mapped_column(String(255), nullable=False)
+    vehicle: Mapped[str] = mapped_column(String(255), nullable=False)
     desc: Mapped[str] = mapped_column(String(255), nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    loans: Mapped[List['Loan']] = db.relationship(secondary=loan_book, back_populates='books')
+    service_tickets: Mapped[List['ServiceTicket']] = db.relationship(secondary=customer_ticket, back_populates='customers')
