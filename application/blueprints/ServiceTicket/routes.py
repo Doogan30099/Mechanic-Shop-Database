@@ -4,7 +4,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 from application.models import ServiceTicket, db
 from . import service_ticket_bp
-
+from application.models import Mechanic
 
 
 @service_ticket_bp.route("/", methods=['POST'])
@@ -59,6 +59,37 @@ def update_service_ticket(service_ticket_id):
     for key, value in service_ticket_data.items():
         setattr(service_ticket, key, value)
 
+    db.session.commit()
+    return service_ticket_schema.jsonify(service_ticket), 200
+
+#UPDATE add mechanic id to SERVICE TICKET
+@service_ticket_bp.route("/<int:service_ticket_id>/assign_mechanic/<int:mechanic_id>", methods=['PUT'])
+def assign_mechanic_to_service_ticket(service_ticket_id, mechanic_id):
+    service_ticket = db.session.get(ServiceTicket, service_ticket_id)
+
+    if not service_ticket:
+        return jsonify({"error": "Service Ticket not found."}), 404
+    # Assign only the mechanic_id; don't require or process a request body
+    service_ticket.mechanic_id = mechanic_id
+    service_ticket.assigned_mechanic = db.session.get(Mechanic, mechanic_id).name
+    db.session.commit()
+    return service_ticket_schema.jsonify(service_ticket), 200
+
+
+#UPDATE add mechanic id to SERVICE TICKET
+@service_ticket_bp.route("/<int:service_ticket_id>/remove_mechanic/<int:mechanic_id>", methods=['PUT'])
+def remove_mechanic_from_service_ticket(service_ticket_id, mechanic_id):
+    service_ticket = db.session.get(ServiceTicket, service_ticket_id)
+
+    if not service_ticket:
+        return jsonify({"error": "Service Ticket not found."}), 404
+    # Ensure the mechanic being removed matches the currently assigned mechanic (optional safety check)
+    if service_ticket.mechanic_id is not None and service_ticket.mechanic_id != mechanic_id:
+        return jsonify({"error": "Mechanic id does not match the assigned mechanic for this ticket."}), 400
+
+    # Clear both the foreign key and the stored assigned_mechanic name
+    service_ticket.mechanic_id = None
+    service_ticket.assigned_mechanic = None
     db.session.commit()
     return service_ticket_schema.jsonify(service_ticket), 200
 

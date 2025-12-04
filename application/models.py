@@ -51,6 +51,7 @@ class ServiceTicket(Base):
     vehicle: Mapped[str] = mapped_column(String(255), nullable=False)
     task_description: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(100), nullable=False)
+    assigned_mechanic: Mapped[str | None] = mapped_column(String(255), nullable=True)
     mechanic_id: Mapped[int | None] = mapped_column(ForeignKey('mechanics.id'), nullable=True)
 
 
