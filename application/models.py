@@ -69,3 +69,11 @@ class Customer(Base):
     desc: Mapped[str] = mapped_column(String(255), nullable=False)
 
     service_tickets: Mapped[List['ServiceTicket']] = db.relationship(secondary=customer_ticket, back_populates='customers')
+
+class Login(Base):
+    __tablename__ = "Login"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey('customers.id'), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)

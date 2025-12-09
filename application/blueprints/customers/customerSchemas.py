@@ -1,5 +1,5 @@
 from application.extensions import ma
-from application.models import Customer
+from application.models import Customer, Login
 
 
 class CustomerSchema(ma.SQLAlchemyAutoSchema):
@@ -8,3 +8,10 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
 
 customer_schema = CustomerSchema()
 customers_schema = CustomerSchema(many=True)
+
+class LoginSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Login
+
+login_schema = LoginSchema()
+login_schemas = LoginSchema(many=True)

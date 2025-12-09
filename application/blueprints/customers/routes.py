@@ -4,6 +4,35 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 from application.models import Customer, db
 from . import customers_bp
+from application.utils.utils import encode_token,token_required
+from application.blueprints.ServiceTicket.ServiceTicketSchema import service_tickets_schema
+
+
+
+@customers_bp.route("/login", methods=['POST'])
+def login():
+    try:
+        credentials = request.json
+        email = credentials['email']
+        password = credentials['password']
+    except KeyError:
+        return jsonify({'messages': "Invalid payload expecting username and password."}), 400
+    
+    query = select(Customer).where(Customer.email == email)
+    customer = db.session.execute(query).scalars().first()
+
+    if customer and customer.password == password: #if we have a user associated with the username, validate the password
+        auth_token = encode_token(customer.id, customer.role.role_name)
+
+        response = {
+            "status": "success",
+            "message": "Successfully Logged In",
+            "auth_token": auth_token
+        }
+        return jsonify(response), 200
+    else:
+        return jsonify({'messages': "Invalid email or password"}), 401
+
 
 
 
@@ -33,6 +62,20 @@ def get_customers():
     customers = db.session.execute(query).scalars().all()
     return customers_schema.jsonify(customers)
 
+
+#get customer service tickets
+@customers_bp.route("/<int:customer_id>/my-tickets", methods=['GET'])
+@token_required
+def get_customer_tickets(customer_id):
+    customer = db.session.get(Customer, customer_id)
+
+    if not customer:
+        return jsonify({"error": "Customer not found."}), 404
+    
+    tickets = customer.service_tickets.all
+    
+    return service_tickets_schema.jsonify(tickets), 200
+
 #GET SPECIFIC CUSTOMER
 @customers_bp.route("/<int:customer_id>", methods=['GET'])
 def get_customer(customer_id):
@@ -44,6 +87,7 @@ def get_customer(customer_id):
 
 #UPDATE SPECIFIC CUSTOMER
 @customers_bp.route("/<int:customer_id>", methods=['PUT'])
+@token_required
 def update_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
 
@@ -63,6 +107,7 @@ def update_customer(customer_id):
 
 #DELETE SPECIFIC CUSTOMER
 @customers_bp.route("/<int:customer_id>", methods=['DELETE'])
+@token_required
 def delete_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
 
