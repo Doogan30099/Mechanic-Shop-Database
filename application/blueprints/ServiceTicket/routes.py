@@ -44,12 +44,28 @@ def get_service_ticket(service_ticket_id):
     return jsonify({"error": "Service Ticket not found."}), 404
 
 #UPDATE SPECIFIC SERVICE TICKET
-@service_ticket_bp.route("/<int:service_ticket_id>", methods=['PUT'])
+@service_ticket_bp.route("/<int:service_ticket_id>/edit", methods=['PUT'])
 def update_service_ticket(service_ticket_id):
     service_ticket = db.session.get(ServiceTicket, service_ticket_id)
+    mechanic_id = db.session.get(Mechanic.id)
 
     if not service_ticket:
         return jsonify({"error": "Service Ticket not found."}), 404
+    
+    add_ids = request.json.get('add_ids', [])
+    remove_ids = request.json.get('remove_ids', [])
+
+    if add_ids is None:
+        query = select(Mechanic).where(Mechanic.id.in_(add_ids))
+        mechanics_to_add = db.session.execute(query).scalars().all()
+        for mechanic in mechanics_to_add:
+            service_ticket.mechanics.append(mechanic)
+    
+    if remove_ids is None:
+        query = select(Mechanic).where(Mechanic.id.in_(remove_ids))
+        mechanics_to_remove = db.session.execute(query).scalars().all()
+        for mechanic in mechanics_to_remove:
+            service_ticket.mechanics.remove(mechanic)
     
     try:
         service_ticket_data = service_ticket_schema.load(request.json)
@@ -76,7 +92,7 @@ def assign_mechanic_to_service_ticket(service_ticket_id, mechanic_id):
     return service_ticket_schema.jsonify(service_ticket), 200
 
 
-#UPDATE add mechanic id to SERVICE TICKET
+#UPDATE remove mechanic id from SERVICE TICKET
 @service_ticket_bp.route("/<int:service_ticket_id>/remove_mechanic/<int:mechanic_id>", methods=['PUT'])
 def remove_mechanic_from_service_ticket(service_ticket_id, mechanic_id):
     service_ticket = db.session.get(ServiceTicket, service_ticket_id)

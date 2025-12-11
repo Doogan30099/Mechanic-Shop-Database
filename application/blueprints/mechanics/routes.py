@@ -74,3 +74,10 @@ def delete_mechanic(mechanic_id):
     db.session.delete(mechanic)
     db.session.commit()
     return jsonify({"message": f'Mechanic id: {mechanic_id}, successfully deleted.'}), 200
+
+
+@mechanics_bp.route("/mechanics/top-mechanics", methods=['GET'])
+def get_top_mechanic():
+    query = select(Mechanic).group_by(Mechanic).order_by(db.func.count(Mechanic.service_tickets).desc())
+    top_mechanics = db.session.execute(query).scalars().all()
+    return mechanics_schema.jsonify(top_mechanics), 200

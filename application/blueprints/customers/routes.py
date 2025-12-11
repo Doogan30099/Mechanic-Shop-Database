@@ -58,9 +58,17 @@ def create_customer():
 #GET ALL CUSTOMERS
 @customers_bp.route("/", methods=['GET'])
 def get_customers():
-    query = select(Customer)
-    customers = db.session.execute(query).scalars().all()
-    return customers_schema.jsonify(customers)
+
+    try:
+        per_page = int(request.args.get('per_page', 10))
+        page = int(request.args.get('page', 1))
+        query = select(Customer)
+        customers = db.paginate(query, page=page, per_page=per_page)
+        return customers_schema.jsonify(customers), 200
+    except:
+        query = select(Customer)
+        customers = db.session.execute(query).scalars().all()
+        return customers_schema.jsonify(customers), 200
 
 
 #get customer service tickets
