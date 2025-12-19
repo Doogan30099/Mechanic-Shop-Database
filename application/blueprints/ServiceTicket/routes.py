@@ -2,9 +2,10 @@ from .ServiceTicketSchema import service_ticket_schema, service_tickets_schema
 from flask import request, jsonify 
 from marshmallow import ValidationError
 from sqlalchemy import select
-from application.models import ServiceTicket, db
+from application.models import ServiceTicket, db, Inventory
 from . import service_ticket_bp
 from application.models import Mechanic
+from application.extensions import cache
 
 
 @service_ticket_bp.route("/", methods=['POST'])
@@ -45,6 +46,7 @@ def get_service_ticket(service_ticket_id):
 
 #UPDATE SPECIFIC SERVICE TICKET
 @service_ticket_bp.route("/<int:service_ticket_id>/edit", methods=['PUT'])
+@cache.cached(timeout=60, query_string=True)
 def update_service_ticket(service_ticket_id):
     service_ticket = db.session.get(ServiceTicket, service_ticket_id)
     mechanic_id = db.session.get(Mechanic.id)
@@ -120,3 +122,40 @@ def delete_service_ticket(service_ticket_id):
     db.session.delete(service_ticket)
     db.session.commit()
     return jsonify({"message": f'Service Ticket id: {service_ticket_id}, successfully deleted.'}), 200
+
+
+#UPDATE SPECIFIC SERVICE TICKET
+@service_ticket_bp.route("/<int:service_ticket_id>/edit", methods=['PUT'])
+@cache.cached(timeout=60, query_string=True)
+def service_ticket_add_part(service_ticket_id):
+    service_ticket = db.session.get(ServiceTicket, service_ticket_id)
+    inventory_id = db.session.get(Inventory.inventory_id)
+
+    if not service_ticket:
+        return jsonify({"error": "Service Ticket not found."}), 404
+    
+    add_parts = request.json.get('add_parts', [])
+    remove_parts = request.json.get('remove_parts', [])
+
+    if add_parts is None:
+        query = select(Inventory).where(Inventory.inventory_id.in_(add_parts))
+        parts_to_add = db.session.execute(query).scalars().all()
+        for part in parts_to_add:
+            service_ticket.parts.append(part)
+    
+    if remove_parts is None:
+        query = select(Inventory).where(Inventory.inventory_id.in_(remove_parts))
+        parts_to_remove = db.session.execute(query).scalars().all()
+        for part in parts_to_remove:
+            service_ticket.parts.remove(part)
+    
+    try:
+        service_ticket_data = service_ticket_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    for field, value in service_ticket_data.items():
+        setattr(service_ticket, field, value)
+
+    db.session.commit()
+    return service_ticket_schema.jsonify(service_ticket), 200

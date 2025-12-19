@@ -6,10 +6,11 @@ from application.models import Customer, db
 from . import customers_bp
 from application.utils.utils import encode_token,token_required
 from application.blueprints.ServiceTicket.ServiceTicketSchema import service_tickets_schema
-
+from application.extensions import limiter
 
 
 @customers_bp.route("/login", methods=['POST'])
+@limiter.limit("5 per hour")
 def login():
     try:
         credentials = request.json

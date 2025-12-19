@@ -34,10 +34,10 @@ class Mechanic(Base):
     __tablename__ = 'mechanics'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
     DOB: Mapped[date] = mapped_column(Date, nullable=False)
-    phone_number: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone_number: Mapped[str] = mapped_column(db.String(255), nullable=False)
 
     service_tickets: Mapped[List['ServiceTicket']] = db.relationship(back_populates='mechanic') #New relationship attribute
 
@@ -47,11 +47,11 @@ class ServiceTicket(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     service_ticket_date: Mapped[date] = mapped_column(Date, nullable=False)
-    customer : Mapped[str] = mapped_column(String(255), nullable=False)
-    vehicle: Mapped[str] = mapped_column(String(255), nullable=False)
-    task_description: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(100), nullable=False)
-    assigned_mechanic: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    customer : Mapped[str] = mapped_column(db.String(255), nullable=False)
+    vehicle: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    task_description: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    status: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    assigned_mechanic: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
     mechanic_id: Mapped[int | None] = mapped_column(ForeignKey('mechanics.id'), nullable=True)
 
 
@@ -62,12 +62,11 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
-    phone_number: Mapped[str] = mapped_column(String(255), nullable=False)
-    vehicle: Mapped[str] = mapped_column(String(255), nullable=False)
-    desc: Mapped[str] = mapped_column(String(255), nullable=False)
-
+    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
+    phone_number: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    vehicle: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    desc: Mapped[str] = mapped_column(db.String(255), nullable=False)
     service_tickets: Mapped[List['ServiceTicket']] = db.relationship(secondary=customer_ticket, back_populates='customers')
 
 class Login(Base):
@@ -75,5 +74,25 @@ class Login(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey('customers.id'), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    password: Mapped[str] = mapped_column(db.String(255), nullable=False)
+
+
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+
+    inventory_id: Mapped[int] = mapped_column(primary_key=True)
+    item_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    price: Mapped[float] = mapped_column(nullable=False)
+    quantity: Mapped[int] = mapped_column(nullable=False)
+
+
+Parts_Used = db.Table(
+    'parts_used',
+    Base.metadata,
+    db.Column('service_ticket_id', db.ForeignKey('service_tickets.id')),
+    db.Column('inventory_id', db.ForeignKey('inventory.inventory_id')),
+    db.Column('quantity_used', db.Integer, nullable=False)
+)
